@@ -1,0 +1,40 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"extends": [
+		"config:recommended"
+	],
+	"ignorePaths": [],
+	"separateMajorMinor": true,
+	"postUpdateOptions": [
+		"gomodTidy"
+	],
+	"packageRules": [
+		{
+			"matchManagers": [
+				"gomod"
+			],
+			"matchDepTypes": [
+				"indirect"
+			],
+			"enabled": true
+		},
+		{
+			"matchPackageNames": [
+				"github.com/spf13/**"
+			],
+			"groupName": "spf13"
+		},
+		{
+			"matchPackageNames": [
+				"golang.org/x/**"
+			],
+			"groupName": "golang.org/x"
+		},
+		{
+			"matchManagers": [
+				"github-actions"
+			],
+			"groupName": "github-actions deps"
+		}
+	]
+}
