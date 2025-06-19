@@ -5,6 +5,7 @@
   "separateMajorMinor": true,
   "postUpdateOptions": ["gomodTidy"],
   "assignees": ["funilrys"],
+  "baseBranches": ["dev"],
   "packageRules": [
     {
       "matchManagers": ["gomod"],
