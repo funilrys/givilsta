@@ -7,6 +7,7 @@ also through the implementation of custom rules to flexibly manage blocklists.
 # Table of Contents <!-- omit in toc -->
 
 - [Background](#background)
+- [Installation \& Upgrade](#installation--upgrade)
 - [Format Specification](#format-specification)
   - [Introduction](#introduction)
   - [Generic Format](#generic-format)
@@ -31,6 +32,14 @@ While the original project is production ready, Givilsta is
 an attempt to compare the performance of the original project with a Go implementation.
 This project does not aim to be compatible with the original project but rather to
 provide similar functionality with potentially improved performance.
+
+# Installation & Upgrade
+
+You can install or upgrade Givilsta using the following command:
+
+```bash
+go install github.com/funilrys/givilsta@latest
+```
 
 # Format Specification
 
