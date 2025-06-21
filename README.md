@@ -1,4 +1,6 @@
 # Givilsta - A different whitelisting mechanism for blocklist maintainers <!-- omit in toc -->
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ffunilrys%2Fgivilsta.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Ffunilrys%2Fgivilsta?ref=badge_shield)
+
 
 Givilsta is a tool designed to help blocklist maintainers or hobbyist manage their lists more effectively by providing an enhanced whitelisting mechanism.
 It allows maintainers to not only whitelist by listing each necessary entry but
@@ -221,3 +223,5 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ```
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Ffunilrys%2Fgivilsta.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Ffunilrys%2Fgivilsta?ref=badge_large)
