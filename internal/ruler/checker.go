@@ -336,6 +336,7 @@ func (fun *InternalRuler) parseAllFlaggedRule(rule string) bool {
 		fun.pushEndsRule(record)
 	} else {
 		fun.pushEndsRule(fmt.Sprintf(".%s", record))
+		fun.pushStrictRule(record)
 	}
 
 	return true
@@ -364,6 +365,7 @@ func (fun *InternalRuler) unparseAllFlaggedRule(rule string) bool {
 	} else {
 		// We except the record to starts with a dot.
 		fun.pullEndsRule(fmt.Sprintf(".%s", record))
+		fun.pullStrictRule(record)
 	}
 
 	return true

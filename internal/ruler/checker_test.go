@@ -109,7 +109,7 @@ func TestIsWhitelisted(t *testing.T) {
 		{"foo.saarlouis.de", true},
 		{"bar.foo.saarlouis.de", true},
 		{"www.bar.foo.saarlouis.de", true},
-		{"foo", false},
+		{"foo", true},
 		{"bar.foo", true},
 		{"foo.foo", true},
 	}
@@ -162,7 +162,7 @@ func TestIsWhitelistedWithComplements(t *testing.T) {
 		{"foo.saarlouis.de", true},
 		{"bar.foo.saarlouis.de", true},
 		{"www.bar.foo.saarlouis.de", true},
-		{"foo", false},
+		{"foo", true},
 		{"bar.foo", true},
 		{"foo.foo", true}}
 
