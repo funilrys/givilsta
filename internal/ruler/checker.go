@@ -115,7 +115,7 @@ func (fun *InternalRuler) RemoveRule(rule string) bool {
 }
 
 func (fun *InternalRuler) IsWhitelisted(subject string) bool {
-	normalizedSubject := NormalizeSubject(subject)
+	normalizedSubject := NormalizeSubject(subject, fun.handle_complement)
 
 	logger := fun.logger.With(
 		slog.String("subject", subject),
@@ -328,8 +328,17 @@ func (fun *InternalRuler) parseAllFlaggedRule(rule string) bool {
 	if strings.HasPrefix(record, `.`) {
 		if strings.Count(record, ".") > 1 {
 			new_record := strings.TrimPrefix(record, ".")
+
 			if fun.handle_complement {
-				fun.pushStrictRule(fmt.Sprintf("www.%s", new_record))
+				var complement_record string
+
+				if !strings.HasPrefix(new_record, "www.") {
+					complement_record = fmt.Sprintf("www.%s", new_record)
+				} else {
+					complement_record = strings.TrimPrefix(new_record, "www.")
+				}
+
+				fun.pushStrictRule(complement_record)
 			}
 			fun.pushStrictRule(new_record)
 		}
@@ -357,7 +366,15 @@ func (fun *InternalRuler) unparseAllFlaggedRule(rule string) bool {
 			new_record := strings.TrimPrefix(record, ".")
 
 			if fun.handle_complement {
-				fun.pullStrictRule(fmt.Sprintf("www.%s", new_record))
+				var complement_record string
+
+				if !strings.HasPrefix(new_record, "www.") {
+					complement_record = fmt.Sprintf("www.%s", new_record)
+				} else {
+					complement_record = strings.TrimPrefix(new_record, "www.")
+				}
+
+				fun.pullStrictRule(complement_record)
 			}
 			fun.pullStrictRule(new_record)
 		}
@@ -403,10 +420,6 @@ func (fun *InternalRuler) parseRZDBFlagedRule(rule string) bool {
 	}
 
 	record := fun.cleanupFlags(fun.FlagsRzdb, rule)
-
-	if fun.handle_complement && strings.HasPrefix(record, "www.") {
-		record = strings.TrimPrefix(record, "www.")
-	}
 
 	if fun.handle_complement && strings.HasPrefix(record, "www.") {
 		record = strings.TrimPrefix(record, "www.")

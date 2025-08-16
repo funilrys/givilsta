@@ -112,6 +112,30 @@ func TestNormalizeSubjects(t *testing.T) {
 		{"  example.org   ", "example.org"},
 		{"xn--ls8h.xn--ls8h", "xn--ls8h.xn--ls8h"},
 		{"saarbrücken.saarland", "xn--saarbrcken-feb.saarland"},
+		{"www.example.com", "www.example.com"},
+		{"localhost", "localhost"},
+		{"# comment", ""},
+		{"saarbrücken.saarland # comment", "xn--saarbrcken-feb.saarland"},
+	}
+
+	for _, test := range tests {
+		result := NormalizeSubject(test.input, false)
+		if result != test.expected {
+			t.Errorf("normalizeSubjects(%q) = %q; want %q", test.input, result, test.expected)
+		}
+	}
+}
+
+func TestNormalizeSubjectsWithComplementHandling(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"", ""},
+		{"example.com", "example.com"},
+		{"  example.org   ", "example.org"},
+		{"xn--ls8h.xn--ls8h", "xn--ls8h.xn--ls8h"},
+		{"saarbrücken.saarland", "xn--saarbrcken-feb.saarland"},
 		{"www.example.com", "example.com"},
 		{"localhost", "localhost"},
 		{"# comment", ""},
@@ -119,7 +143,7 @@ func TestNormalizeSubjects(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		result := NormalizeSubject(test.input)
+		result := NormalizeSubject(test.input, true)
 		if result != test.expected {
 			t.Errorf("normalizeSubjects(%q) = %q; want %q", test.input, result, test.expected)
 		}

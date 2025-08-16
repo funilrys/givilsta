@@ -141,12 +141,13 @@ func NormalizeURL(urlStr string) string {
 //
 // Args:
 //
-//	subject: The subject to normalize.
+//		subject: The subject to normalize.
+//	 complementHandling: Whether to handle complements (e.g., "www.example.com" vs "example.com" and vice versa).
 //
 // Returns:
 //
 //	A normalized subject string, or an empty string if the subject is invalid.
-func NormalizeSubject(subject string) string {
+func NormalizeSubject(subject string, complementHandling bool) string {
 	subject = strings.TrimSpace(subject)
 
 	if subject == "" || strings.HasPrefix(subject, "#") {
@@ -167,7 +168,9 @@ func NormalizeSubject(subject string) string {
 		idnazedSubject = subject
 	}
 
-	idnazedSubject = strings.TrimPrefix(idnazedSubject, "www.")
+	if complementHandling {
+		idnazedSubject = strings.TrimPrefix(idnazedSubject, "www.")
+	}
 
 	return idnazedSubject
 }
