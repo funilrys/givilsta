@@ -124,7 +124,7 @@ func (fun *InternalRuler) IsWhitelisted(subject string) bool {
 	logger.Debug("Checking subject")
 
 	if normalizedSubject == "" {
-		logger.Debug("Subject is empty, skipping")
+		logger.Debug("Normalized subject is empty, skipping")
 
 		return false
 	}
@@ -154,10 +154,14 @@ func (fun *InternalRuler) IsWhitelisted(subject string) bool {
 			return true
 		}
 
+		logger.Debug("Subject not found in strict rules. Continuing search", slog.String("extractedSubject", sub))
+
 		if rules, ok := fun.present[commonKey]; ok && slices.Contains(rules, sub) {
 			logger.Debug("Subject found in present rules", slog.String("extractedSubject", sub))
 			return true
 		}
+
+		logger.Debug("Subject not found in present rules. Continuing search", slog.String("extractedSubject", sub))
 
 		endKey := fun.endsSearchKeyFromRule(sub)
 
@@ -170,10 +174,14 @@ func (fun *InternalRuler) IsWhitelisted(subject string) bool {
 			}
 		}
 
+		logger.Debug("Subject not found in ends rules. Continuing search", slog.String("extractedSubject", sub))
+
 		if fun.compiled_regexp != nil && fun.compiled_regexp.MatchString(sub) {
 			logger.Debug("Subject found in regex rules", slog.String("extractedSubject", sub))
 			return true
 		}
+
+		logger.Debug("Subject not found in regex rules.", slog.String("extractedSubject", sub))
 	}
 
 	logger.Debug("Subject not matched any rule")
