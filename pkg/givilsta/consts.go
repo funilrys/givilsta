@@ -24,4 +24,7 @@ const (
 	FlagReg = "REG@"
 	// RZDB: the RZDB rule.
 	FlagRzdb = "RZDB@"
+
+	// NoFlag: the classic rule, no flag is applied.
+	NoFlag = ""
 )

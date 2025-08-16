@@ -35,6 +35,12 @@ var whitelistFiles []string
 var whitelistALLFiles []string
 var whitelistREGFiles []string
 var whitelistRZDBFiles []string
+
+var bypassFiles []string
+var bypassALLFiles []string
+var bypassREGFiles []string
+var bypassRZDBFiles []string
+
 var handleComplement bool
 var logLevel string
 
@@ -102,19 +108,91 @@ func init() {
 
 	rootCmd.Flags().StringVarP(&sourceFile, "source", "s", "", "The source file to cleanup.")
 
-	rootCmd.Flags().StringSliceVarP(&whitelistFiles, "whitelist", "w", []string{}, "The whitelist file to use for the cleanup. Can be specified multiple times.")
-	rootCmd.Flags().StringSliceVarP(&whitelistALLFiles, "whitelist-all", "a", []string{}, "The whitelist file to use for the cleanup. Any entries in this file-s will be prefixed with the 'ALL' flag. Can be specified multiple times.")
-	rootCmd.Flags().StringSliceVarP(&whitelistREGFiles, "whitelist-regex", "r", []string{}, "The whitelist file to use for the cleanup. Any entries in this file-s will be prefixed with the 'REG' flag. Can be specified multiple times.")
-	rootCmd.Flags().StringSliceVarP(&whitelistRZDBFiles, "whitelist-rzdb", "z", []string{}, "The whitelist file to use for the cleanup. Any entries in this file-s will be prefixed with the 'RZDB' flag. Can be specified multiple times.")
+	rootCmd.Flags().StringSliceVarP(&whitelistFiles, "whitelist", "w", []string{}, "The whitelist file to use for the cleanup.\nCan be specified multiple times.")
+	rootCmd.Flags().StringSliceVarP(&whitelistALLFiles, "whitelist-all", "a", []string{}, "The whitelist file to use for the cleanup. Any entries in this file-s will be prefixed with the 'ALL' flag.\nCan be specified multiple times.")
+	rootCmd.Flags().StringSliceVarP(&whitelistREGFiles, "whitelist-regex", "r", []string{}, "The whitelist file to use for the cleanup. Any entries in this file-s will be prefixed with the 'REG' flag.\nCan be specified multiple times.")
+	rootCmd.Flags().StringSliceVarP(&whitelistRZDBFiles, "whitelist-rzdb", "z", []string{}, "The whitelist file to use for the cleanup. Any entries in this file-s will be prefixed with the 'RZDB' flag.\nCan be specified multiple times.")
+
+	rootCmd.Flags().StringSliceVarP(&bypassFiles, "bypass", "B", []string{}, `The bypass file to use for the cleanup. This file(s) is used to ensure that some some whitelisting rules are never applied.
+Simply put any of the known rules in this file(s) and they will be ignored during the cleanup process.
+Can be specified multiple times.`)
+	rootCmd.Flags().StringSliceVarP(&bypassALLFiles, "bypass-all", "A", []string{}, "The bypass file to use for the cleanup. Any entries in this file-s will be prefixed with the 'ALL' flag.\nCan be specified multiple times.")
+	rootCmd.Flags().StringSliceVarP(&bypassREGFiles, "bypass-regex", "R", []string{}, "The bypass file to use for the cleanup. Any entries in this file-s will be prefixed with the 'REG' flag.\nCan be specified multiple times.")
+	rootCmd.Flags().StringSliceVarP(&bypassRZDBFiles, "bypass-rzdb", "Z", []string{}, "The bypass file to use for the cleanup. Any entries in this file-s will be prefixed with the 'RZDB' flag.\nCan be specified multiple times.")
 
 	rootCmd.Flags().StringVarP(&outputFile, "output", "o", "", "The output file to write the cleaned up subjects to. If not specified, we will print to stdout.")
 
 	rootCmd.Flags().BoolVarP(&handleComplement, "handle-complement", "c", false, `Whether to handle complements subjects or not.
-	A complement subject is www.example.com when the subject is example.com - and vice-versa.
-	This is useful for domains that have a 'www' subdomain and want them to be whitelisted when the domain
-	(without 'wwww' prefix) is whitelist listed.`)
+A complement subject is www.example.com when the subject is example.com - and vice-versa.
+is useful for domains that have a 'www' subdomain and want them to be whitelisted when the domain
+without 'wwww' prefix is whitelist listed.`)
 
 	rootCmd.Flags().StringVarP(&logLevel, "log-level", "l", "error", "The log level to use. Can be one of: debug, info, warn, error.")
+}
+
+func processRuleFile(targetFile string, whitelistFlag givilsta.Flags, index int, ruler givilsta.GivilstaRuler, logger *slog.Logger, dirName string, bypass bool) {
+	logger.Debug("Processing whitelist file.", slog.String("file", targetFile), slog.String("flag", string(whitelistFlag)))
+
+	var targetFileName string
+	if helpers.IsUrl(targetFile) {
+		if !bypass {
+			targetFileName = filepath.Join(dirName, fmt.Sprintf("whitelist-%s-%d.list", strings.ToLower(string(whitelistFlag)), index))
+		} else {
+			targetFileName = filepath.Join(dirName, fmt.Sprintf("bypass-%s-%d.list", strings.ToLower(string(whitelistFlag)), index))
+			logger.Debug("Processing bypass file from URL.", slog.String("file", targetFile), slog.String("targetFile", targetFileName))
+		}
+
+		logger.Debug("Fetching file from URL.", slog.String("file", targetFile))
+		err := helpers.FetchURLToFile(targetFile, targetFileName)
+
+		if err != nil {
+			logger.Error("Error fetching file from URL.", slog.String("file", targetFile), slog.String("error", err.Error()))
+			fmt.Printf("Error fetching file from URL '%s': %v\n", targetFile, err)
+			os.Exit(1)
+		}
+
+		logger.Debug("Processing file from URL.", slog.String("file", targetFile), slog.String("targetFile", targetFileName))
+
+		helpers.IterFile(targetFileName, func(line string) {
+			if !bypass {
+				if whitelistFlag == givilsta.NoFlag {
+					ruler.AddRule(line)
+				} else {
+					ruler.AddRuleWithFlag(line, whitelistFlag)
+				}
+			} else {
+				if whitelistFlag == givilsta.NoFlag {
+					ruler.RemoveRule(line)
+				} else {
+					ruler.RemoveRuleWithFlag(line, whitelistFlag)
+				}
+			}
+		})
+	} else {
+		if _, err := os.Stat(targetFile); os.IsNotExist(err) {
+			logger.Error("Whitelist file does not exist.", slog.String("file", targetFile))
+			fmt.Printf("Error: Whitelist file '%s' does not exist.\n", targetFile)
+			os.Exit(1)
+		}
+
+		logger.Debug("Processing whitelist file.", slog.String("file", targetFile))
+
+		helpers.IterFile(targetFile, func(line string) {
+			if !bypass {
+				if whitelistFlag == givilsta.NoFlag {
+					ruler.AddRule(line)
+				} else {
+					ruler.AddRuleWithFlag(line, whitelistFlag)
+				}
+			} else {
+				if whitelistFlag == givilsta.NoFlag {
+					ruler.RemoveRule(line)
+				} else {
+					ruler.RemoveRuleWithFlag(line, whitelistFlag)
+				}
+			}
+		})
+	}
 }
 
 func processCleanup() {
@@ -135,130 +213,35 @@ func processCleanup() {
 	}
 
 	for index, whitelistFile := range whitelistFiles {
-		if helpers.IsUrl(whitelistFile) {
-			targetFileName := filepath.Join(dirName, fmt.Sprintf("whitelist-%d.list", index))
-
-			logger.Debug("Fetching whitelist file from URL.", slog.String("file", whitelistFile))
-			err := helpers.FetchURLToFile(whitelistFile, targetFileName)
-
-			if err != nil {
-				logger.Error("Error fetching whitelist file from URL.", slog.String("file", whitelistFile), slog.String("error", err.Error()))
-				fmt.Printf("Error fetching whitelist file from URL '%s': %v\n", whitelistFile, err)
-				os.Exit(1)
-			}
-
-			logger.Debug("Processing whitelist file from URL.", slog.String("file", whitelistFile), slog.String("targetFile", targetFileName))
-			helpers.IterFile(targetFileName, func(line string) {
-				ruler.AddRule(line)
-			})
-		} else {
-			if _, err := os.Stat(whitelistFile); os.IsNotExist(err) {
-				logger.Error("Whitelist file does not exist.", slog.String("file", whitelistFile))
-				fmt.Printf("Error: Whitelist file '%s' does not exist.\n", whitelistFile)
-				os.Exit(1)
-			}
-
-			logger.Debug("Processing whitelist file.", slog.String("file", whitelistFile))
-			helpers.IterFile(whitelistFile, func(line string) {
-				ruler.AddRule(line)
-			})
-		}
+		processRuleFile(whitelistFile, givilsta.NoFlag, index, ruler, logger, dirName, false)
 	}
 
 	for index, whitelistALLFile := range whitelistALLFiles {
-		if helpers.IsUrl(whitelistALLFile) {
-			targetFileName := filepath.Join(dirName, fmt.Sprintf("whitelist-all-%d.list", index))
-
-			logger.Debug("Fetching whitelist file from URL.", slog.String("file", whitelistALLFile))
-
-			err := helpers.FetchURLToFile(whitelistALLFile, targetFileName)
-			if err != nil {
-				logger.Error("Error fetching whitelist file from URL.", slog.String("file", whitelistALLFile), slog.String("error", err.Error()))
-				fmt.Printf("Error fetching whitelist ALL file from URL '%s': %v\n", whitelistALLFile, err)
-				os.Exit(1)
-			}
-
-			logger.Debug("Processing whitelist ALL file from URL.", slog.String("file", whitelistALLFile), slog.String("targetFile", targetFileName))
-			helpers.IterFile(targetFileName, func(line string) {
-				ruler.AddRuleWithFlag(line, givilsta.FlagAll)
-			})
-		} else {
-			if _, err := os.Stat(whitelistALLFile); os.IsNotExist(err) {
-				logger.Error("Whitelist ALL file does not exist.", slog.String("file", whitelistALLFile))
-				fmt.Printf("Error: Whitelist ALL file '%s' does not exist.\n", slog.String("file", whitelistALLFile))
-				os.Exit(1)
-			}
-
-			logger.Debug("Processing whitelist ALL file.", slog.String("file", whitelistALLFile))
-			helpers.IterFile(whitelistALLFile, func(line string) {
-				ruler.AddRuleWithFlag(line, givilsta.FlagAll)
-			})
-		}
+		processRuleFile(whitelistALLFile, givilsta.FlagAll, index, ruler, logger, dirName, false)
 	}
 
 	for index, whitelistREGFile := range whitelistREGFiles {
-		if helpers.IsUrl(whitelistREGFile) {
-			targetFileName := filepath.Join(dirName, fmt.Sprintf("whitelist-regex-%d.list", index))
-
-			fmt.Printf("Fetching whitelist REG file from URL: %s\n", whitelistREGFile)
-
-			err := helpers.FetchURLToFile(whitelistREGFile, targetFileName)
-
-			if err != nil {
-				logger.Error("Error fetching whitelist REG file from URL.", slog.String("file", whitelistREGFile), slog.String("error", err.Error()))
-				fmt.Printf("Error fetching whitelist REG file from URL '%s': %v\n", whitelistREGFile, err)
-				os.Exit(1)
-			}
-
-			logger.Debug("Processing whitelist REG file from URL.", slog.String("file", whitelistREGFile), slog.String("targetFile", targetFileName))
-
-			helpers.IterFile(targetFileName, func(line string) {
-				ruler.AddRuleWithFlag(line, givilsta.FlagReg)
-			})
-		} else {
-			if _, err := os.Stat(whitelistREGFile); os.IsNotExist(err) {
-				logger.Error("Whitelist REG file does not exist.", slog.String("file", whitelistREGFile))
-				fmt.Printf("Error: Whitelist REG file '%s' does not exist.\n", whitelistREGFile)
-				os.Exit(1)
-			}
-
-			logger.Debug("Processing whitelist REG file.", slog.String("file", whitelistREGFile))
-			helpers.IterFile(whitelistREGFile, func(line string) {
-				ruler.AddRuleWithFlag(line, givilsta.FlagReg)
-			})
-		}
+		processRuleFile(whitelistREGFile, givilsta.FlagReg, index, ruler, logger, dirName, false)
 	}
 
 	for index, whitelistRZDBFile := range whitelistRZDBFiles {
-		if helpers.IsUrl(whitelistRZDBFile) {
-			targetFileName := filepath.Join(dirName, fmt.Sprintf("whitelist-rzdb-%d.list", index))
+		processRuleFile(whitelistRZDBFile, givilsta.FlagRzdb, index, ruler, logger, dirName, false)
+	}
 
-			logger.Debug("Fetching whitelist RZDB file from URL.", slog.String("file", whitelistRZDBFile))
+	for index, bypassFile := range bypassFiles {
+		processRuleFile(bypassFile, givilsta.NoFlag, index, ruler, logger, dirName, true)
+	}
 
-			err := helpers.FetchURLToFile(whitelistRZDBFile, targetFileName)
-			if err != nil {
-				logger.Error("Error fetching whitelist RZDB file from URL.", "file", whitelistRZDBFile, "error", err)
-				fmt.Printf("Error fetching whitelist RZDB file from URL '%s': %v\n", whitelistRZDBFile, err)
-				os.Exit(1)
-			}
+	for index, bypassALLFile := range bypassALLFiles {
+		processRuleFile(bypassALLFile, givilsta.FlagAll, index, ruler, logger, dirName, true)
+	}
 
-			logger.Debug("Processing whitelist RZDB file from URL.", slog.String("file", whitelistRZDBFile), slog.String("targetFile", targetFileName))
+	for index, bypassREGFile := range bypassREGFiles {
+		processRuleFile(bypassREGFile, givilsta.FlagReg, index, ruler, logger, dirName, true)
+	}
 
-			helpers.IterFile(targetFileName, func(line string) {
-				ruler.AddRuleWithFlag(line, givilsta.FlagRzdb)
-			})
-		} else {
-			if _, err := os.Stat(whitelistRZDBFile); os.IsNotExist(err) {
-				logger.Error("Whitelist RZDB file does not exist.", slog.String("file", whitelistRZDBFile))
-				fmt.Printf("Error: Whitelist RZDB file '%s' does not exist.\n", whitelistRZDBFile)
-				os.Exit(1)
-			}
-
-			logger.Debug("Processing whitelist RZDB file.", slog.String("file", whitelistRZDBFile))
-			helpers.IterFile(whitelistRZDBFile, func(line string) {
-				ruler.AddRuleWithFlag(line, givilsta.FlagRzdb)
-			})
-		}
+	for index, bypassRZDBFile := range bypassRZDBFiles {
+		processRuleFile(bypassRZDBFile, givilsta.FlagReg, index, ruler, logger, dirName, true)
 	}
 
 	if outputFile != "" {

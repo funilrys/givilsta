@@ -167,18 +167,31 @@ Available Commands:
   version     Print the version number of your application
 
 Flags:
+  -B, --bypass strings            The bypass file to use for the cleanup. This file(s) is used to ensure that some some whitelisting rules are never applied.
+                                  Simply put any of the known rules in this file(s) and they will be ignored during the cleanup process.
+                                  Can be specified multiple times.
+  -A, --bypass-all strings        The bypass file to use for the cleanup. Any entries in this file-s will be prefixed with the 'ALL' flag.
+                                  Can be specified multiple times.
+  -R, --bypass-regex strings      The bypass file to use for the cleanup. Any entries in this file-s will be prefixed with the 'REG' flag.
+                                  Can be specified multiple times.
+  -Z, --bypass-rzdb strings       The bypass file to use for the cleanup. Any entries in this file-s will be prefixed with the 'RZDB' flag.
+                                  Can be specified multiple times.
   -c, --handle-complement         Whether to handle complements subjects or not.
-                                        A complement subject is www.example.com when the subject is example.com - and vice-versa.
-                                        This is useful for domains that have a 'www' subdomain and want them to be whitelisted when the domain
-                                        (without 'wwww' prefix) is whitelist listed.
+                                  A complement subject is www.example.com when the subject is example.com - and vice-versa.
+                                  is useful for domains that have a 'www' subdomain and want them to be whitelisted when the domain
+                                  without 'wwww' prefix is whitelist listed.
   -h, --help                      help for givilsta
   -l, --log-level string          The log level to use. Can be one of: debug, info, warn, error. (default "error")
   -o, --output string             The output file to write the cleaned up subjects to. If not specified, we will print to stdout.
   -s, --source string             The source file to cleanup.
-  -w, --whitelist strings         The whitelist file to use for the cleanup. Can be specified multiple times.
-  -a, --whitelist-all strings     The whitelist file to use for the cleanup. Any entries in this file-s will be prefixed with the 'ALL' flag. Can be specified multiple times.
-  -r, --whitelist-regex strings   The whitelist file to use for the cleanup. Any entries in this file-s will be prefixed with the 'REG' flag. Can be specified multiple times.
-  -z, --whitelist-rzdb strings    The whitelist file to use for the cleanup. Any entries in this file-s will be prefixed with the 'RZDB' flag. Can be specified multiple times.
+  -w, --whitelist strings         The whitelist file to use for the cleanup.
+                                  Can be specified multiple times.
+  -a, --whitelist-all strings     The whitelist file to use for the cleanup. Any entries in this file-s will be prefixed with the 'ALL' flag.
+                                  Can be specified multiple times.
+  -r, --whitelist-regex strings   The whitelist file to use for the cleanup. Any entries in this file-s will be prefixed with the 'REG' flag.
+                                  Can be specified multiple times.
+  -z, --whitelist-rzdb strings    The whitelist file to use for the cleanup. Any entries in this file-s will be prefixed with the 'RZDB' flag.
+                                  Can be specified multiple times.
 
 Use "givilsta [command] --help" for more information about a command.
 ```
