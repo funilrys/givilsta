@@ -3,7 +3,7 @@ module github.com/funilrys/givilsta
 go 1.24.2
 
 require (
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	golang.org/x/net v0.48.0
 )
 
