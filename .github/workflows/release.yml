@@ -77,7 +77,12 @@ jobs:
       - name: Generate Release Notes
         id: generateReleaseNotes
         run: |
-          git log $(git describe --tags --abbrev=0)..HEAD --pretty=format:'* %s (%an)' --no-merges > release_notes.md
+          # Generate release notes based on commits since the last tag
+          git fetch --tags
+          currentTag="$(git describe --tags --abbrev=0)"
+          previousTag="$(git describe --tags --abbrev=0 $currentTag^)"
+
+          git log ${previousTag}..${currentTag} --pretty=format:'* %s (%an)' --no-merges > release_notes.md
           echo "changelog=$(cat release_notes.md)" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
@@ -93,7 +98,7 @@ jobs:
             ${{ steps.generateReleaseNotes.outputs.changelog || 'No specific changelog generated. See commit history for details.' }}
 
             ---
-            *Built with ❤️ by @funilrys through GitHub Actions*
+            *Built with ❤️ by ${{ github.actor }} through GitHub Actions*
           files: |
             ./releases/*
             LICENSE
