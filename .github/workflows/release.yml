@@ -3,8 +3,12 @@ name: Release
 on:
   push:
     tags:
-      - 'v*.*.*'
-      - 'v*.*.*-rc*'
+      - "v*.*.*"
+      - "v*.*.*-rc*"
+
+permissions:
+  contents: write
+  id-token: write
 
 jobs:
   build_and_release:
