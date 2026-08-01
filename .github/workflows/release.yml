@@ -82,7 +82,7 @@ jobs:
           currentTag="$(git describe --tags --abbrev=0)"
           previousTag="$(git describe --tags --abbrev=0 $currentTag^)"
 
-          git log ${previousTag}..${currentTag} --pretty=format:'* %s (%an)' --no-merges > release_notes.md
+          git log ${previousTag}..${currentTag} --pretty=format:'* %s (@%an)' --no-merges > release_notes.md
           echo "changelog=$(cat release_notes.md)" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
